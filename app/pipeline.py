@@ -121,7 +121,10 @@ def _decaps(out: dict, gz: Gazetteer) -> None:
         if not v or not (v.isupper() or v.islower()) or len(re.sub(r"[\W\d_]", "", v)) < 3:
             continue
         hits = gz.streets.get(out.get("city") or "", {}).get(norm(v)) if f == "street_name" else None
-        out[f] = hits[0]["name"] if hits and v.isupper() else (v[:1].upper() + v[1:].lower() if v.isupper() else v[:1].upper() + v[1:])
+        if v.isupper():
+            out[f] = hits[0]["name"] if hits else v[:1] + v[1:].lower()
+        else:
+            out[f] = v[:1].upper() + v[1:]
 
 
 def process_record(rec: dict, gz: Gazetteer | None = None, debug: bool = False) -> dict:
