@@ -1,0 +1,52 @@
+services:
+  api:
+    build: .
+    image: jana-address:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # Необязательно: если задан, правки (POST /api/v1/corrections) принимаются только с этим токеном.
+      # Пакетный разбор для жюри токена не требует. Задаётся в .env рядом с этим файлом.
+      JANA_API_TOKEN: ${JANA_API_TOKEN:-}
+    volumes:
+      # правки операторов: API хранит их и учит на них справочник (переживают перезапуск)
+      - corrections:/app/data/corrections
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  ui:
+    image: jana-address:latest
+    command: ["streamlit", "run", "ui/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    environment:
+      API_URL: http://api:8000
+      JANA_API_TOKEN: ${JANA_API_TOKEN:-}
+    ports:
+      - "8501:8501"
+    volumes:
+      - corrections:/app/data/corrections
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Сборка справочника из OSM (только при наличии интернета):
+  #   docker compose --profile build run --rm gazetteer-builder
+  gazetteer-builder:
+    profiles: ["build"]
+    build:
+      context: .
+      dockerfile: Dockerfile.builder
+    volumes:
+      - ./data:/work/data
+
+volumes:
+  corrections:

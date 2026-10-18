@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+data/raw/
+data/*.tmp
+data/corrections/
+# Синтетика пересобирается: python scripts/gen_synthetic.py
+data/synthetic/
+# Данные организаторов не выносим за пределы хакатона
+data/train.json
+data/sample_*.json
+# бэкапы справочника
+data/*.old.sqlite

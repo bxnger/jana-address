@@ -1,0 +1,523 @@
+{
+ "_comment": [
+  "30 адресов Астаны без города, сгенерированы чат-ботом (не реальные клиенты).",
+  "Не независимая проверка: аккуратный формат «ул. Название, дом». Ценны ловушками:",
+  "bot_19 «ул. Алматы» — улица как город; bot_15 «Керей, Жанибек хандар» — запятая в названии.",
+  "Подключён в test_cases.py. bot_15 требует справочник улиц (тег needs_osm): без него тест пропускается."
+ ],
+ "cases": [
+  {
+   "id": "bot_01",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Туран, 15",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Туран",
+    "house": "15"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_02",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "пр. Сарыарка, 27",
+   "expected": {
+    "street_type": "проспект",
+    "street_name": "Сарыарка",
+    "house": "27"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_03",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Иманова, 18",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Иманова",
+    "house": "18"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_04",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Туркестан, 32",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Туркестан",
+    "house": "32"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_05",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "пр. Мангилик Ел, 19",
+   "expected": {
+    "street_type": "проспект",
+    "street_name": "Мангилик Ел",
+    "house": "19"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_06",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Бейбитшилик, 45",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Бейбитшилик",
+    "house": "45"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_07",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Кунаева, 12",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Кунаева",
+    "house": "12"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_08",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Сарайшык, 7",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Сарайшык",
+    "house": "7"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_09",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "пр. Кабанбай Батыра, 41",
+   "expected": {
+    "street_type": "проспект",
+    "street_name": "Кабанбай Батыра",
+    "house": "41"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_10",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Байтурсынова, 23",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Байтурсынова",
+    "house": "23"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_11",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Достык, 16",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Достык",
+    "house": "16"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_12",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Нажимеденова, 14",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Нажимеденова",
+    "house": "14"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_13",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Калдаякова, 9",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Калдаякова",
+    "house": "9"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_14",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "пр. Абылай хана, 34",
+   "expected": {
+    "street_type": "проспект",
+    "street_name": "Абылай хана",
+    "house": "34"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_15",
+   "tags": [
+    "chatbot",
+    "comma_in_name",
+    "needs_osm"
+   ],
+   "raw": "ул. Керей, Жанибек хандар, 18",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Керей, Жанибек хандар",
+    "house": "18"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_16",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Орынбор, 25",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Орынбор",
+    "house": "25"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_17",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Сыганак, 29",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Сыганак",
+    "house": "29"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_18",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "пр. Республики, 38",
+   "expected": {
+    "street_type": "проспект",
+    "street_name": "Республики",
+    "house": "38"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_19",
+   "tags": [
+    "chatbot",
+    "street_named_like_city"
+   ],
+   "raw": "ул. Алматы, 21",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Алматы",
+    "house": "21"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_20",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Кенесары, 17",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Кенесары",
+    "house": "17"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_21",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Иманова, 31",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Иманова",
+    "house": "31"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_22",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Акмешит, 11",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Акмешит",
+    "house": "11"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_23",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Е-10, 6",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Е-10",
+    "house": "6"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_24",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Е-15, 22",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Е-15",
+    "house": "22"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_25",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Улы Дала, 39",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Улы Дала",
+    "house": "39"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_26",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Жарокова, 13",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Жарокова",
+    "house": "13"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_27",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Бухар Жырау, 26",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Бухар Жырау",
+    "house": "26"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_28",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Кошкарбаева, 35",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Кошкарбаева",
+    "house": "35"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_29",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "ул. Тауелсиздик, 42",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Тауелсиздик",
+    "house": "42"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  },
+  {
+   "id": "bot_30",
+   "tags": [
+    "chatbot"
+   ],
+   "raw": "пр. Женис, 24",
+   "expected": {
+    "street_type": "проспект",
+    "street_name": "Женис",
+    "house": "24"
+   },
+   "expect_null": [
+    "city",
+    "province",
+    "apartment"
+   ]
+  }
+ ]
+}

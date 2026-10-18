@@ -1,0 +1,10 @@
+.git
+data/raw
+data/*.tmp
+data/corrections
+**/__pycache__
+*.pbf
+train.json
+core/tests
+core/evaluate.py
+data/*.old.sqlite

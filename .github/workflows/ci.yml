@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    name: Линтер, тесты, синтетика
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Зависимости
+        run: pip install -r requirements.txt pytest httpx ruff
+      - name: Линтер (наш код; core/ проверяется своими тестами)
+        run: ruff check app ui scripts tests
+      - name: Все проверки (тесты, ядро, синтетика, район, живой набор)
+        run: python scripts/check_all.py --seed 2027
+
+  docker:
+    name: Docker без сети
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Сборка образа
+        run: docker compose build
+      - name: Запуск в изолированной сети и проверка
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.offline.yml up -d
+          python3 scripts/offline_check.py
+      - name: Логи при ошибке
+        if: failure()
+        run: docker compose logs --tail 100

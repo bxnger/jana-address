@@ -1,0 +1,7 @@
+# Проверка автономности, как на финальном прогоне: контейнеры в сети без выхода наружу.
+#   docker compose -f docker-compose.yml -f docker-compose.offline.yml up -d
+#   python scripts/offline_check.py
+# Порты наружу во internal-сети не пробрасываются, поэтому проверка идёт через docker exec.
+networks:
+  default:
+    internal: true

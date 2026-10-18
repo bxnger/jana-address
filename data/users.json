@@ -1,0 +1,16 @@
+{
+ "users": {
+  "operator": {
+   "role": "operator",
+   "name": "Оператор",
+   "salt": "2168dc392c757298fa7aeda341ac34de",
+   "hash": "3fc03b0c2d0470874ad982e089696a4c65a8ecda51d4e345ed03add5b283de57"
+  },
+  "admin": {
+   "role": "admin",
+   "name": "Администратор",
+   "salt": "b95e24b91352d3d6e540bbe456eb4662",
+   "hash": "f52959f505131d1824e1968d2e3b32af26a67ad2d357896a5552486f2818928f"
+  }
+ }
+}

@@ -1,0 +1,27 @@
+[project]
+name = "jana-address"
+version = "1.0.0"
+description = "Разбор адреса одной строкой на поля для логистики (Jana Post × Terricon Valley, кейс 1)"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+# core/ — ядро разбора Участника 1, у него свои тесты и стиль
+extend-exclude = ["core", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = [
+    "E702",   # «a = 1; b = 2» в однотипных присваиваниях пайплайна — осознанно
+    "SIM108", # тернарник не всегда читаемее
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]          # sys.path до импорта проекта
+"scripts/*" = ["E402"]
+"ui/*" = ["E402"]
+"app/api.py" = ["B008"]       # Body(...)/Query(...) в параметрах — штатный приём FastAPI
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

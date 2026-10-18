@@ -1,0 +1,584 @@
+{
+ "_comment": "ИСПОЛЬЗОВАН В РАЗРАБОТКЕ. Размечен до первого прогона (первый прогон: 97.6% у новой версии, 68.5% у исходной); после этого по нему исправлены 2 ошибки (h11, h12). Это уже НЕ слепая проверка — для честной оценки нужен sample_output.json или новая разметка, которую парсер не видел.",
+ "cases": [
+  {
+   "id": "h01",
+   "raw": "г. Кокшетау, ул. Ауэзова 155, кв. 34",
+   "expected": {
+    "province": "Акмолинская область",
+    "city": "Кокшетау",
+    "street_type": "улица",
+    "street_name": "Ауэзова",
+    "house": "155",
+    "apartment": "34"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h02",
+   "raw": "Алматы, Медеуский р-н, пр. Достык 132, кв 45",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "district": "Медеуский",
+    "street_type": "проспект",
+    "street_name": "Достык",
+    "house": "132",
+    "apartment": "45"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h03",
+   "raw": "Петропавловск, Жамбыла 160, 2 подъезд, 5 этаж, кв. 18",
+   "expected": {
+    "province": "Северо-Казахстанская область",
+    "city": "Петропавловск",
+    "street_name": "Жамбыла",
+    "house": "160",
+    "entrance": "2",
+    "floor": "5",
+    "apartment": "18"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h04",
+   "raw": "г.Уральск, мкр.Строитель, д.12/2, кв.56",
+   "expected": {
+    "province": "Западно-Казахстанская область",
+    "city": "Уральск",
+    "street_type": "микрорайон",
+    "street_name": "Строитель",
+    "house": "12/2",
+    "apartment": "56"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h05",
+   "raw": "Талдыкорган, Шевченко 132а",
+   "expected": {
+    "province": "Жетысуская область",
+    "city": "Талдыкорган",
+    "street_name": "Шевченко",
+    "house": "132а"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h06",
+   "raw": "Астана, Есильский р-н, ул. Достык 5/2, 3 подъезд",
+   "expected": {
+    "province": "Астана",
+    "city": "Астана",
+    "district": "Есильский",
+    "street_type": "улица",
+    "street_name": "Достык",
+    "house": "5/2",
+    "entrance": "3"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h07",
+   "raw": "Шымкент, мкр Самал-3, 1249",
+   "expected": {
+    "province": "Шымкент",
+    "city": "Шымкент",
+    "street_type": "микрорайон",
+    "street_name": "Самал-3",
+    "house": "1249"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h08",
+   "raw": "Экибастуз, ул. Мәшһүр Жүсіп 64",
+   "expected": {
+    "province": "Павлодарская область",
+    "city": "Экибастуз",
+    "street_type": "улица",
+    "street_name": "Мәшһүр Жүсіп",
+    "house": "64"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h09",
+   "raw": "Алматы, Алатауский район, мкр. Шанырак-2, ул. Жанкожа батыра 60",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "district": "Алатауский",
+    "living_area": "Шанырак-2",
+    "street_type": "улица",
+    "street_name": "Жанкожа батыра",
+    "house": "60"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h10",
+   "raw": "Темиртау, пр. Республики, 37, кв. 90",
+   "expected": {
+    "province": "Карагандинская область",
+    "city": "Темиртау",
+    "street_type": "проспект",
+    "street_name": "Республики",
+    "house": "37",
+    "apartment": "90"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h11",
+   "raw": "Рудный, 50 лет Октября 71-5",
+   "expected": {
+    "province": "Костанайская область",
+    "city": "Рудный",
+    "street_name": "50 лет Октября",
+    "house": "71",
+    "apartment": "5"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h12",
+   "raw": "Актау 27 мкр 12 дом 45 кв",
+   "expected": {
+    "province": "Мангистауская область",
+    "city": "Актау",
+    "street_type": "микрорайон",
+    "street_name": "27",
+    "house": "12",
+    "apartment": "45"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h13",
+   "raw": "Жанаозен, мкр Мунайшы, 15",
+   "expected": {
+    "province": "Мангистауская область",
+    "city": "Жанаозен",
+    "street_type": "микрорайон",
+    "street_name": "Мунайшы",
+    "house": "15"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h14",
+   "raw": "Алматы, ул. Жандосова 98, 4 этаж",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "street_type": "улица",
+    "street_name": "Жандосова",
+    "house": "98",
+    "floor": "4"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h15",
+   "raw": "Туркестан, ул. Тауке хан 289",
+   "expected": {
+    "province": "Туркестанская область",
+    "city": "Туркестан",
+    "street_type": "улица",
+    "street_name": "Тауке хан",
+    "house": "289"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h16",
+   "raw": "Караганда, ул. Бухар Жырау 49/5, кв 12, подъезд 3",
+   "expected": {
+    "province": "Карагандинская область",
+    "city": "Караганда",
+    "street_type": "улица",
+    "street_name": "Бухар Жырау",
+    "house": "49/5",
+    "apartment": "12",
+    "entrance": "3"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h17",
+   "raw": "Каскелен, Наурызбай батыра 12",
+   "expected": {
+    "province": "Алматинская область",
+    "city": "Каскелен",
+    "street_name": "Наурызбай батыра",
+    "house": "12"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h18",
+   "raw": "Конаев, 2 мкр, 15 дом",
+   "expected": {
+    "province": "Алматинская область",
+    "city": "Конаев",
+    "street_type": "микрорайон",
+    "street_name": "2",
+    "house": "15"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h19",
+   "raw": "Астана, пр. Кабанбай батыра 11/3 кв 501",
+   "expected": {
+    "province": "Астана",
+    "city": "Астана",
+    "street_type": "проспект",
+    "street_name": "Кабанбай батыра",
+    "house": "11/3",
+    "apartment": "501"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h20",
+   "raw": "Атырау, Привокзальный-3а, 12",
+   "expected": {
+    "province": "Атырауская область",
+    "city": "Атырау",
+    "street_name": "Привокзальный-3а",
+    "house": "12"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h21",
+   "raw": "Алматы, Карасай батыра 152, кв.3, этаж 2",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "street_name": "Карасай батыра",
+    "house": "152",
+    "apartment": "3",
+    "floor": "2"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h22",
+   "raw": "ул.Маметовой 67б кв 25",
+   "expected": {
+    "street_type": "улица",
+    "street_name": "Маметовой",
+    "house": "67б",
+    "apartment": "25"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h23",
+   "raw": "Тараз, Абая 215, 1 подъезд",
+   "expected": {
+    "province": "Жамбылская область",
+    "city": "Тараз",
+    "street_name": "Абая",
+    "house": "215",
+    "entrance": "1"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h24",
+   "raw": "Семей, Шакарима 22/1",
+   "expected": {
+    "province": "Абайская область",
+    "city": "Семей",
+    "street_name": "Шакарима",
+    "house": "22/1"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h25",
+   "raw": "Алматы, Бостандыкский р-н, мкр. Орбита-1, 22, кв. 14",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "district": "Бостандыкский",
+    "street_type": "микрорайон",
+    "street_name": "Орбита-1",
+    "house": "22",
+    "apartment": "14"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h26",
+   "raw": "Актобе, пр. Абилкайыр хана 52, 7 этаж 28 кв",
+   "expected": {
+    "province": "Актюбинская область",
+    "city": "Актобе",
+    "street_type": "проспект",
+    "street_name": "Абилкайыр хана",
+    "house": "52",
+    "floor": "7",
+    "apartment": "28"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h27",
+   "raw": "Нур-Султан, Сарыарка 31/2, 12 этаж, кв. 120",
+   "expected": {
+    "province": "Астана",
+    "city": "Астана",
+    "street_name": "Сарыарка",
+    "house": "31/2",
+    "floor": "12",
+    "apartment": "120"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h28",
+   "raw": "Павлодар, Кутузова 204 - 15",
+   "expected": {
+    "province": "Павлодарская область",
+    "city": "Павлодар",
+    "street_name": "Кутузова",
+    "house": "204",
+    "apartment": "15"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h29",
+   "raw": "Алматы, Сатпаева 90/20 блок Б",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "street_name": "Сатпаева",
+    "house": "90/20"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h30",
+   "raw": "Костанай, 5 мкр, 3 дом, 45 квартира",
+   "expected": {
+    "province": "Костанайская область",
+    "city": "Костанай",
+    "street_type": "микрорайон",
+    "street_name": "5",
+    "house": "3",
+    "apartment": "45"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h31",
+   "raw": "г. Шымкент, ул. Байтурсынова 13, 3 эт",
+   "expected": {
+    "province": "Шымкент",
+    "city": "Шымкент",
+    "street_type": "улица",
+    "street_name": "Байтурсынова",
+    "house": "13",
+    "floor": "3"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h32",
+   "raw": "Алматы, ЖК Алатау, ул. Сейфуллина 498",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "living_area": "Алатау",
+    "street_type": "улица",
+    "street_name": "Сейфуллина",
+    "house": "498"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h33",
+   "raw": "мкр. 3, дом 7, кв. 45, Актау",
+   "expected": {
+    "province": "Мангистауская область",
+    "city": "Актау",
+    "street_type": "микрорайон",
+    "street_name": "3",
+    "house": "7",
+    "apartment": "45"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h34",
+   "raw": "Қарағанды қ., Бұқар жырау даңғылы 30",
+   "expected": {
+    "province": "Карагандинская область",
+    "city": "Караганда",
+    "street_type": "проспект",
+    "street_name": "Бұқар жырау",
+    "house": "30"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h35",
+   "raw": "Атырау, ул. Сатпаева 19 А",
+   "expected": {
+    "province": "Атырауская область",
+    "city": "Атырау",
+    "street_type": "улица",
+    "street_name": "Сатпаева",
+    "house": "19А"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h36",
+   "raw": "Алматы, Ауэзова 175 кв 2, домофон 2#",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "street_name": "Ауэзова",
+    "house": "175",
+    "apartment": "2"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h37",
+   "raw": "Абылай хана 5, вход с торца",
+   "expected": {
+    "street_name": "Абылай хана",
+    "house": "5"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h38",
+   "raw": "Көкшетау, Абай көшесі 89",
+   "expected": {
+    "province": "Акмолинская область",
+    "city": "Кокшетау",
+    "street_type": "улица",
+    "street_name": "Абай",
+    "house": "89"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h39",
+   "raw": "г.Алматы,мкр.Айнабулак-3,д.145,кв.12",
+   "expected": {
+    "province": "Алматы",
+    "city": "Алматы",
+    "street_type": "микрорайон",
+    "street_name": "Айнабулак-3",
+    "house": "145",
+    "apartment": "12"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  },
+  {
+   "id": "h40",
+   "raw": "Алматинская обл, Енбекшиказахский р-н, г. Есик, ул. Токаша Бокина 21",
+   "expected": {
+    "province": "Алматинская область",
+    "district": "Енбекшиказахский",
+    "city": "Есик",
+    "street_type": "улица",
+    "street_name": "Токаша Бокина",
+    "house": "21"
+   },
+   "tags": [
+    "dev_used_holdout"
+   ]
+  }
+ ]
+}
