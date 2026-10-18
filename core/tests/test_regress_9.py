@@ -59,3 +59,25 @@ def test_team_cases_40(osm, raw, exp):
     r = parse_address(raw, "t")
     for k, v in exp.items():
         assert r[k] == v, (raw, k, r[k], v)
+
+
+CASES_HARD = [
+    ("Усть-КаменогорскУтегенбатыра8кв84под9эт7", {"city": "Усть-Каменогорск", "street_name": "Утегенбатыра", "house": "8"}),
+    ("Петропавловск, Бокейхана 89, кв 81-169", {"house": "89", "apartment": "81"}),
+    ("БЦ Каусар, второй этаж", {"floor": "2", "street_name": None, "landmark": "БЦ Каусар"}),
+    ("Жезказган, Момышулы 22 (1-2 подъезды)", {"house": "22", "apartment": None, "entrance": "1"}),
+    ("Экибастуз, Достык 77, корп. 9.2", {"house": "77", "apartment": None}),
+    ("Almaty q., Момышулы kosh., 20 uy", {"city": "Алматы", "street_name": "Момышулы", "house": "20"}),
+    ("Атырау, Айтиева, ранее Фурманова, дом 81а", {"street_name": "Айтиева", "house": "81а"}),
+    ("Караганда, Қазыбек би 10А-2", {"street_name": "Қазыбек би", "house": "10А"}),
+    ("Кызылорда, Бокейхана, дом номер сорок третий", {"street_name": "Бокейхана", "house": None}),
+    ("индекс для Тараз, но фактически Кызылорда, Достык 166", {"city": "Кызылорда", "house": "166"}),
+    ("Нур-Султан (ныне Астана), Сейфуллина 51", {"city": "Астана", "house": "51"}),
+]
+
+
+@pytest.mark.parametrize("raw,exp", CASES_HARD)
+def test_hard_batch(osm, raw, exp):
+    r = parse_address(raw, "t")
+    for k, v in exp.items():
+        assert r[k] == v, (raw, k, r[k], v)

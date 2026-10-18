@@ -15,6 +15,7 @@ from pathlib import Path
 from .explain import explain
 from .gazetteer import DATA_DIR, Gazetteer, get_gazetteer
 from .noise import strip_noise
+from .text import norm
 
 ROOT = Path(__file__).resolve().parent.parent
 os.environ.setdefault("JANA_GAZETTEER", str(DATA_DIR / "core_gazetteer.json"))
@@ -106,6 +107,17 @@ def courier_info(extras: dict, noise: list[str]) -> dict:
     return {k: v for k, v in info.items() if v}
 
 
+def _decaps(out: dict, gz: Gazetteer) -> None:
+    """«УЛ. САТПАЕВА» -> «Сатпаева»: в 2ГИС названия не капсом. Сначала написание из справочника,
+    иначе заглавная только первая буква (как «Кабанбай батыра»)."""
+    for f in ("street_name", "living_area"):
+        v = out.get(f)
+        if not v or not v.isupper() or len(re.sub(r"[\W\d_]", "", v)) < 3:
+            continue
+        hits = gz.streets.get(out.get("city") or "", {}).get(norm(v)) if f == "street_name" else None
+        out[f] = hits[0]["name"] if hits else v[:1] + v[1:].lower()
+
+
 def process_record(rec: dict, gz: Gazetteer | None = None, debug: bool = False) -> dict:
     gz = gz or get_gazetteer()
     raw = rec.get("raw_address")
@@ -121,6 +133,7 @@ def process_record(rec: dict, gz: Gazetteer | None = None, debug: bool = False) 
     out = {f: res.get(f) for f in OUT_ORDER}
     out["id"], out["raw_address"] = rec.get("id"), raw
     via = None
+    _decaps(out, gz)
     try:
         src = _sources(out, flags, normalized)
         via = enrich_osm(out, src, gz)

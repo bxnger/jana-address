@@ -109,6 +109,23 @@ def _dot_space(m: re.Match) -> str:
     return ". "
 
 
+_GLUED_CITY_RE = re.compile(r"(?<![\w-])([А-ЯЁӘҒҚҢӨҰҮІ][а-яёәғқңөұүі-]+?)(?=[А-ЯЁӘҒҚҢӨҰҮІ][а-яёәғқңөұүі])(\S*)")
+_ORD = {"перв": 1, "втор": 2, "трет": 3, "четв": 4, "пят": 5, "шест": 6, "седь": 7, "вось": 8, "девя": 9, "деся": 10}
+_CAMEL_RE = re.compile(r"(?<=[а-яёәғқңөұүі])(?=[А-ЯЁӘҒҚҢӨҰҮІ][а-яёәғқңөұүі])")
+
+
+def _split_city_glued(text: str) -> str:
+    """«АстанаКабанбайбатыра98-203», «ПетропавловскЖибекЖолы59-22»: известный город слит со следующим словом.
+    Режем только если слитая часть слева — известный город (иначе обычные слова не трогаем)."""
+    def fix(m):
+        whole = m.group(0)
+        for b in [x.start() for x in re.finditer(r"(?<=[а-яёәғқңөұүі])(?=[А-ЯЁӘҒҚҢӨҰҮІ][а-яёәғқңөұүі])", whole)]:
+            if gz.is_known_city(whole[:b]):
+                return f"{whole[:b]}, {_CAMEL_RE.sub(' ', whole[b:])}"
+        return whole
+    return _GLUED_CITY_RE.sub(fix, text)
+
+
 def normalize(raw) -> str:
     """Чистит строку для РАЗБОРА (raw_address в ответе не меняется)."""
     if not isinstance(raw, str):
@@ -125,14 +142,42 @@ def normalize(raw) -> str:
     text = "".join(out)
     text = re.sub(r"[«»\"“”„‘’]|(?<!\w)'|'(?!\w)", " ", text)
     text = re.sub(r"(?<=\d)\s+/\s*(?=\d)|(?<=\d)\s*/\s+(?=\d)", "/", text)   # "519 / 521" -> "519/521"
+    text = re.sub(r"(?i)\(\s*(?:левый|правый)\s+(?:край|берег)\s*\)", " ", text)
+    text = re.sub(r"(?i)[,(]?\s*(?:ранее|бывш(?:ая|ий|ее|\.))\s+[^,()]+\)?", " ", text)   # «ранее Фурманова»
+    text = re.sub(r"(?i)индекс\s+для\s+[^,]+,\s*но\s+фактически\s+", "", text)      # «индекс для A, но фактически B»
+    text = re.sub(r"(?i)[^,()]*\(\s*ныне\s+([^)]+)\)", r"\1", text)                    # «Нур-Султан (ныне Астана)»
+    text = re.sub(r"(?i)(?<!\w)дом\s+номер\s+[а-яё]+(?:\s+[а-яё]+(?:ый|ой|ий|ья|ое))?(?=\s*(?:,|$))", " ", text)
     text = re.sub(r"[;()\[\]{}]", ",", text)
+    text = re.sub(r"(?i)(?<!\w)кв\.?\s*(\d+)\s*-\s*\d+(?!\w)", r"кв \1", text)          # «кв 81-169» -> кв 81
+    text = re.sub(r"(?i)(?<!\w)(\d+)\s*-\s*\d+\s+(подъезд|подьезд|этаж)", r"\1 \2", text)  # «1-2 подъезды»
+    text = re.sub(r"(?i)(?<!\w)(эт(?:аж)?\.?)\s*(\d+)\s*-\s*\d+(?!\w)", r"\1 \2", text)  # «эт 7-15»
+    text = re.sub(r"(?i)(?<!\w)корп(?:ус)?\.?\s*\d+\.\d+(?!\w)", " ", text)               # «корп. 9.2»
+    text = re.sub(r"(?i)(?<!\w)каласы(?!\w)", "қаласы", text)
+    text = re.sub(r"(?i)(?<!\w)kosh(?:esi)?\.?(?!\w)", "көшесі", text)
+    text = re.sub(r"(?i)(?<=\w)\s+q\.(?=\s*,)", " қаласы", text)
+    text = re.sub(r"(?i)(?<!\w)(перв|втор|трет|четв[её]рт|пят|шест|седьм|восьм|девят|десят)(?:ый|ой|ий|ом)\s+"
+                  r"(этаж|подъезд|подьезд)", lambda m: f"{_ORD[m.group(1).lower()[:4]]} {m.group(2)}", text)
+    # точка как разделитель: "Алматы. Абая. 10. кв 2" (тире не трогаем: "Павлодар - Семей" — улица)
+    # (сокращения "ул.", "просп.", "кв." не трогаем: слово до точки — 5+ букв и не сокращение)
+    text = re.sub(r"(?<![\w-])(?!(?i:просп|микр|кварт|корп|строен)\.)([^\W\d_]{5,})\.\s+(?=[^\W\d_]{2})",
+                  r"\1, ", text)
+    text = re.sub(r"(?<=\d)\.\s+(?=[^\W\d_]{2})", ", ", text)
     text = re.sub(r"(?i)(?<!\w)(?:(?:кв|д|дом)\.?\s*)?б\s*[/\\]\s*н(?!\w)\.?", " ", text)   # «б/н» — без номера
+    # "Астана қ. / г. Астана" -> "г. Астана" (двуязычный дубль города с маркерами)
+    text = re.sub(r"(?i)(?<![\w-])([^\W\d_][\w-]*)\s+қ\.?\s*/\s*г\.?\s*\1(?![\w-])", r"г. \1", text)
+    # "Бокейхана к. 79" — «к.» после названия это көшесі (улица), а не корпус ("42 к. 2" — корпус, не трогаем)
+    text = re.sub(r"(?<=[^\W\d_]{3})\s+к\.\s+(?=\d)", " көшесі ", text)
+    # "улФурманова", "прАбая" — тип улицы слит с названием
+    text = re.sub(r"(?<![\w.])(ул|пр|пер|мкр)(?=[А-ЯЁӘҒҚҢӨҰҮІ][а-яёәғқңөұүі])", r"\1. ", text)
+    text = _split_city_glued(text)
     text = _fold_homoglyphs(text)
     text = re.sub(r"(?i)под[ьъ]?езд", lambda m: m.group(0)[:3] + "ъезд", text)  # подьезд/подезд
     text = re.sub(r"\s+\.", ".", text)                       # "Ул ." -> "Ул."
     # "ул.Абая" -> "ул. Абая" ("кв.5" не трогаем); инициал "П.Ахмедов" оставляем слитно — так пишет эталон
     text = re.sub(rf"\.(?={LET})", _dot_space, text)
     text = re.sub(r"(?<=\d)\s+([абвгАБВГ])(?![^\W\d_])", r"\1", text)  # "15 а" -> "15а"
+    text = re.sub(r"(?<=\d)-([абвгдАБВГД])(?![^\W\d_])", r"\1", text)  # "д.12-а" -> "12а"
+    text = re.sub(r"(?<![\w.-])Е\s+(?=\d{1,3}(?![\d/]))", "Е-", text)  # улицы Астаны "Е 10" -> "Е-10"
     # "102бдом", "1бкв" — литера дома слита с ключевым словом: "102б дом"
     text = re.sub(r"(?i)(?<=\d)([а-яёa-z])(?=(?:дом[а]?|квартира|кв|этаж|подъезд)(?![^\W\d_]))", r"\1 ", text)
     return _cleanup(text)
@@ -387,7 +432,7 @@ def _resolve_bilingual(text: str) -> str:
 # ---------------------------------------------------------------------------
 _UNIT_KW = {
     "apartment": r"квартир[аыуе]?|кварт?ира|квартра|кваритра|кв-ра|кв(?!-?л)\.?|пәтер|flat|apartment|apt\.?|kv\.?|офис|оф\.",
-    "entrance": r"подъезд[а-я]*|подъ?\.|(?<=\d)под|под\.?(?=\s*\d)|п-д|п\.(?=\s*\d)|кіреберіс|entrance|pod(?:ezd|jezd|yezd)?\.?",
+    "entrance": r"подъезд[а-я]*|подъ?\.|(?<=\d)под|под\.?(?=\s*\d)|под\.?(?=\s*(?:,|$))|п-д|п\.(?=\s*\d)|кіреберіс|entrance|pod(?:ezd|jezd|yezd)?\.?",
     "floor": r"этаж[а-я]*|этж\.?|етаж[а-я]*|эт\.?|қабат[а-я]*|floor|etazh",
     "house": r"дом[а]?|д\.?|зд\.?|здание|үй|уй|dom|d\.?|house",
 }
@@ -507,7 +552,7 @@ def _strip_building_part(text: str) -> tuple[str, set]:
 _LANDMARK_RE = re.compile(
     NLB + r"(?:ориентир[а-я]*|напротив|рядом\s+с(?:о)?|возле|около|на\s+углу|угол|уг\.?|"
     r"магазин[а-я]*|маг\.|супермаркет[а-я]*|минимаркет[а-я]*|тц|трц|бц|тд|"
-    r"рын(?:ок|ка)|базар[аеуы]?|аптек[аиу]|школ[аыу]|гимнази[яи]|детский\s+сад|д/с|"
+    r"рын(?:ок|ка|ком)|цон|magnum|мечет[ьи]|базар[аеуы]?|аптек[аиу]|школ[аыу]|гимнази[яи]|детский\s+сад|д/с|"
     r"больниц[аыу]|поликлиник[аиу]|кафе|ресторан[а-я]*|банк[а]?|салон[а-я]*|азс|"
     r"остановк[аиу]|павильон[а-я]*|общежити[еяи]|qazpost|казпочт[аы]|kaspi|halyk|почт[аыу])" + NLA,
     re.I,
@@ -589,6 +634,9 @@ def extract_province(text: str) -> tuple[Optional[str], str]:
             name = m.group("name")
             last = name.split()[-1]
             prov = gz.province_from_text(last) or gz.province_from_text(name)
+            if not prov and rx is _PROV_RE and gz.is_known_city(last):
+                # "Семей обл", "Кокшетау обл" — это город, а не область: слово «обл» убираем, город остаётся
+                return None, _cut(text, [(m.start("name") + len(name), m.end())])
             if not prov and rx is _PROV_RE and " " in name:
                 # "Абая Неизвестная обл" — берём только последнее слово
                 start = m.start() + name.rfind(" ") + 1
@@ -641,7 +689,8 @@ def _bare_district(text: str, city: str) -> tuple[Optional[str], str]:
             continue
         rest = [t for t in toks[1:] if not re.search(r"\d", t)]
         if len(toks) > 1:
-            if not rest or not gz.is_street_anywhere(" ".join(rest)):
+            if not rest or len(" ".join(rest)) < 4 or not gz.is_street_anywhere(" ".join(rest)) \
+                    or gz.is_street_anywhere(" ".join([w, *rest])):
                 continue
         elif gz.is_street_anywhere(w) and not _STREET_TYPE_RE.search(text[:s_] + " " + text[e_:]):
             continue      # «Алматы, Сарыарка, 5» — это улица, район тут только при отдельной улице с типом
@@ -803,7 +852,11 @@ def extract_city(text: str, orig: Optional[str] = None) -> tuple[Optional[str], 
                 and not _STREET_TYPE_RE.search(text[max(0, tm.start("c") - 12):tm.start("c")]) \
                 and not _TYPE_BEFORE_RE.search(text[:tm.start("c")]) \
                 and re.search(rf"{LET}", text[:tm.start("c")]) \
-                and not _STREET_TYPE_RE.match(text[text.rfind(",", 0, tm.start("c")) + 1:].lstrip()) \
+                and (not _STREET_TYPE_RE.match(text[text.rfind(",", 0, tm.start("c")) + 1:].lstrip())
+                     # "дом 50 ул Қазыбек би Алматы": дом уже вырезан до города, улица = тип + название + город
+                     or (orig and re.search(r"\d", orig) and re.search(
+                         rf"(?i)(?:^|,)\s*(?:ул|улица|пр|пр-т|проспект|пер|переулок|көшесі)\.?\s+{LET}[\w-]*(?:\s+{LET}[\w-]*)*\s+"
+                         + re.escape(tm.group("c")) + r"\s*$", text))) \
                 and not (orig and re.search(re.escape(tm.group("c")) + r"\s*,?\s*(?:д\.?|дом|үй|уй)?\s*\d", orig, re.I)):
             # не "ул. Дінмұхамед Қонаев, д.19б" и не "Кіші Бурыл дом 223": там город — часть названия улицы
             city, span = tm.group("c"), tm.span("c")
@@ -899,7 +952,7 @@ def _name_after(text, s, e, kind, later_number, house_known=False) -> tuple[list
         name.append(toks[i])            # "улица Набережная 5": слово-тип как название после типа
         i += 1
     absorbed = False
-    num_ok = i < len(toks) and toks[i].lastgroup == "num" and (
+    num_ok = i < len(toks) and toks[i].lastgroup == "num" and text[toks[i].start() - 1:toks[i].start()] != "-" and (
         _AREA_NUM_RE.fullmatch(toks[i].group(0))
         # "квартал 105, 12", "мкр. разъезд 103, 6": трёхзначный номер — название, если дальше есть номер дома
         or (re.fullmatch(r"\d{3}", toks[i].group(0)) and (later_number(toks[i].end()) or house_known)))
