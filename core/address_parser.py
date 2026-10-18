@@ -126,6 +126,103 @@ def _split_city_glued(text: str) -> str:
     return _GLUED_CITY_RE.sub(fix, text)
 
 
+# Пометки курьеру, которые люди дописывают в адрес: лифт, охрана, «заходите со двора». Адресом не являются.
+_NOTE_PHRASES = [
+    r"лифт\w*\s+(?:не\s+работает|сломан\w*|слева|справа|есть|нет)",
+    r"(?:домофон\w*|звонок)\s+(?:сломан\w*|не\s+работает|нет)",
+    r"охран\w*\s+на\s+входе(?:\s+спросить)?",
+    r"дежурн\w*\s+на\s+входе",
+    r"заходи(?:те|ть)\s+(?:за\s+\w+|со\s+двора|с\s+торца)",
+    r"заезд\s+со\s+двора",
+    r"вход\s+(?:с|со)\s+\w+(?:\s+а\s+не\s+с\s+\w+)?",
+    r"(?:за\s+\w+\s+)?поворот\s+во\s+двор",
+    r"(?:во\s+)?двор\w*\s+со\s+стороны\s+\w+",
+    r"стуч(?:ите|ать)\s+в\s+(?:окно|дверь)",
+    r"(?:ориентир\s+)?(?:шлагбаум|пешком|проверяй|проверьте|бойы|бойымен)",
+    r"код\s+(?:подъезда|двери|калитки|замка)\s*[:\-]?\s*[\dA-Za-zА-Яа-я]{1,6}[#*]?",
+    r"\d+\s+очередь",
+    r"(?:жёлт|желт|красн|син|зелен|зелён|бел|сер|кирпичн|голуб|розов)(?:ый|ая|ое|ого|ому)\s+дом\w*",
+    r"рядом\s+[^,]*?\s+нет,?\s*но\s+это",
+    r"если\s+[^,]*",
+    r"(?:а\s+)?по\s+трассе\s+на\s+\w+",
+    r"частный\s+(?:сектор|дом)",
+    r"(?<!мкр )(?<!мкр\. )(?<!микрорайон )(?<!мкрн )старый\s+город",
+    r"собак\w*\s+(?:не\s+кусается|в\s+будке|злая|кусается)(?:\s+(?:не\s+)?[^\W\d_]+){0,2}",
+    r"(?:название\s+улицы\s+)?сам[аи]?\s+не\s+уверен\w*[^,]*",
+    r"лифт\w*(?:\s+(?!(?:этаж|эт|подъезд|под|кв|дом|д)(?![^\W\d_]))[^\W\d_]+){0,5}",
+    r"домофон\w*(?:\s+(?!\d)[^\W\d_]+){1,6}",
+    r"сокращенно\s+[^,]*",
+    r"так\s+и\s+(?:пишу|помню)",
+    r"жеке\s+(?:сектор|үй)",
+    r"(?:ескі|ескерту)\s+[^,]*",
+    r"(?:подъезд|въезд)\s+(?:со|с)\s+[^,]*",
+    r"раньше\s+[^,]*",
+    r"вахт\w*\s+скажет(?:\s+куда)?",
+    r"(?:калитк|забор|ворот)\w*",
+    r"звонить\s+(?:три|два|\d)\s+раза",
+    r"(?:без\s+лифта|не\s+ловит|запаролен\w*|скажу\s+в\s+\w+)",
+]
+_NOTE_PHRASES_RE = re.compile(NLB + "(?:" + "|".join(_NOTE_PHRASES) + ")" + NLA, re.I)
+
+
+def _locative_city(word: str) -> Optional[str]:
+    """«в Астане» -> Астана, «в Шымкенте» -> Шымкент: ищем в справочнике форму из именительного падежа."""
+    for cand in (word, word[:-1], word[:-1] + "а", word[:-1] + "я", word[:-1] + "ь", word[:-2] + "ь"):
+        if len(cand) >= 3 and gz.is_known_city(cand):
+            return gz.canonical_city(cand)
+    return None
+
+
+_NAME_TAILS = frozenset("жырау хана хан батыра би жолы ата ана ұлы улы ақын акына шешен ели".split())
+_QWERTY = dict(zip("qwertyuiop[]asdfghjkl;'zxcvbnm,.`", "йцукенгшщзхъфывапролджэячсмитьбюё"))
+_QWERTY.update({k.upper(): v.upper() for k, v in list(_QWERTY.items()) if k.isalpha()})
+
+
+def _fix_layout(text: str) -> str:
+    """«gtnhjgfdkjdcr» -> «петропавловск»: адрес набран в английской раскладке. Меняем слово, только если
+    в русской раскладке получилось название города или улицы из справочника."""
+    def fix(m: re.Match) -> str:
+        tok = m.group(0)
+        conv = "".join(_QWERTY.get(ch, ch) for ch in tok).lower()
+        for cand in (conv, "ж" + conv[1:] if conv.startswith("э") else conv):
+            if gz.is_known_city(cand) or gz.is_street_anywhere(cand):
+                return gz.canonical_city(cand).capitalize() if gz.is_known_city(cand) else cand.capitalize()
+        return tok
+    return re.sub(r"(?<![\w])[A-Za-z;'\[`][A-Za-z;'\[\],.`]{2,}[A-Za-z](?![\w])", fix, text)
+
+
+def _clean_courier_text(text: str) -> str:
+    # «обл Акмолинская но живу в Астане» -> «г. Астана»
+    def lives_in(m: re.Match) -> str:
+        city = _locative_city(m.group(1))
+        return f"г. {city}" if city else m.group(0)
+    text = re.sub(rf"(?i)(?:обл\.?\s+{LET}+\s+)?(?:но\s+)?(?:живу|проживаю)\s+в\s+({LET}+)", lives_in, text)
+    # «кв квартира 301» — слово продублировано
+    text = re.sub(r"(?i)(?<!\w)(кв(?:артира)?\.?)\s+кв(?:артира)?\.?(?=\s*\d)", r"\1", text)
+    # «общ 1 к 115», «общ номер 2» -> ориентир «общежитие №N», дальше «к N» — комната
+    def hostel(m: re.Match) -> str:
+        room = f" комн {m.group(2)}" if m.group(2) else ""
+        return f"общежитие #{m.group(1)}{room}"
+    text = re.sub(r"(?i)(?<!\w)общ\.?\s+(?:номер\s+|#\s*)?(\d+)(?:\s+к\.?\s*(\d+))?(?!\w)", hostel, text)
+    # «дом с магазином внизу» — «дом» тут не ключевое слово
+    text = re.sub(r"(?i)(?<!\w)дома?\s+с(?:о)?\s+(?=магазин|аптек|кафе|школ|банк)", "", text)
+    text = re.sub(r"(?i)^.*?(?<!\w)по\s+факту\s+", "", text)           # «в 2гис ЖК X, а по факту Кутузова 50»
+    text = re.sub(rf"(?i)({LET}[\w-]*)\s+(\d+[\w/]*)\s+(?:она|он|оно)\s+теперь\s+([^,\d]+?)(?=\s+кв|\s*,|\s*$)",
+                  r"\3 \2", text)                                    # «Ленина 7 она теперь Сатпаева» -> новое имя
+    text = _NOTE_PHRASES_RE.sub(" ", text)
+    text = re.sub(r"(?i)(?<!\w)district(?!\w)", " ", text)
+    # «Фурманова (Айтиева) 90» — старое и новое название: оставляем то, что есть в справочнике
+    def alt_name(m: re.Match) -> str:
+        a, b = m.group(1), m.group(2)
+        return b if (not gz.is_street_anywhere(a) and gz.is_street_anywhere(b)) else a
+    text = re.sub(rf"(?<![\w-])({LET}[\w-]+)\s*\(\s*({LET}[\w-]+)\s*\)(?=\s*\d)", alt_name, text)
+    # служебная подпись в начале: «Адрес: …», «запасная опечатка: …» (город перед двоеточием не трогаем)
+    m = re.match(rf"\s*({LET}+(?:\s+{LET}+){{0,2}})\s*:\s*(?=\S)", text)
+    if m and not any(gz.is_known_city(w) for w in re.findall(LET + "+", m.group(1))):
+        text = text[m.end():]
+    return text
+
+
 def normalize(raw) -> str:
     """Чистит строку для РАЗБОРА (raw_address в ответе не меняется)."""
     if not isinstance(raw, str):
@@ -140,6 +237,7 @@ def normalize(raw) -> str:
             continue
         out.append(" " if cat in ("Cc", "Zs", "Zl", "Zp") else ch)
     text = "".join(out)
+    text = _fix_layout(text)                         # до кавычек: «'» в английской раскладке — буква «э/ж»
     text = re.sub(r"[«»\"“”„‘’]|(?<!\w)'|'(?!\w)", " ", text)
     text = re.sub(r"(?<=\d)\s+/\s*(?=\d)|(?<=\d)\s*/\s+(?=\d)", "/", text)   # "519 / 521" -> "519/521"
     text = re.sub(r"(?i)\(\s*(?:левый|правый)\s+(?:край|берег)\s*\)", " ", text)
@@ -147,6 +245,7 @@ def normalize(raw) -> str:
     text = re.sub(r"(?i)индекс\s+для\s+[^,]+,\s*но\s+фактически\s+", "", text)      # «индекс для A, но фактически B»
     text = re.sub(r"(?i)[^,()]*\(\s*ныне\s+([^)]+)\)", r"\1", text)                    # «Нур-Султан (ныне Астана)»
     text = re.sub(r"(?i)(?<!\w)дом\s+номер\s+[а-яё]+(?:\s+[а-яё]+(?:ый|ой|ий|ья|ое))?(?=\s*(?:,|$))", " ", text)
+    text = _clean_courier_text(text)
     text = re.sub(r"[;()\[\]{}]", ",", text)
     text = re.sub(r"(?i)(?<!\w)кв\.?\s*(\d+)\s*-\s*\d+(?!\w)", r"кв \1", text)          # «кв 81-169» -> кв 81
     text = re.sub(r"(?i)(?<!\w)(\d+)\s*-\s*\d+\s+(подъезд|подьезд|этаж)", r"\1 \2", text)  # «1-2 подъезды»
@@ -431,10 +530,10 @@ def _resolve_bilingual(text: str) -> str:
 # 4. КВАРТИРА / ПОДЪЕЗД / ЭТАЖ / ДОМ — совместное назначение
 # ---------------------------------------------------------------------------
 _UNIT_KW = {
-    "apartment": r"квартир[аыуе]?|кварт?ира|квартра|кваритра|кв-ра|кв(?!-?л)\.?|пәтер|flat|apartment|apt\.?|kv\.?|офис|оф\.",
+    "apartment": r"квартир[аыуе]?|комнат[аыуе]?|бөлме|комн\.?|ком\.?(?=\s*\d)|кварт?ира|квартра|кваритра|кв-ра|кв(?!-?л)\.?|пәтер|flat|apartment|apt\.?|kv\.?|офис|оф\.",
     "entrance": r"подъезд[а-я]*|подъ?\.|(?<=\d)под|под\.?(?=\s*\d)|под\.?(?=\s*(?:,|$))|п-д|п\.(?=\s*\d)|кіреберіс|entrance|pod(?:ezd|jezd|yezd)?\.?",
     "floor": r"этаж[а-я]*|этж\.?|етаж[а-я]*|эт\.?|қабат[а-я]*|floor|etazh",
-    "house": r"дом[а]?|д\.?|зд\.?|здание|үй|уй|dom|d\.?|house",
+    "house": r"дом[а]?|участок|д\.?|зд\.?|здание|үй|уй|dom|d\.?|house",
 }
 UNIT_KW_RE = re.compile(
     NLB + "(?:" + "|".join(f"(?P<{k}>{v})" for k, v in _UNIT_KW.items()) + ")" + NLA, re.I
@@ -550,11 +649,11 @@ def _strip_building_part(text: str) -> tuple[str, set]:
 # 5. ОРИЕНТИР (консервативно)
 # ---------------------------------------------------------------------------
 _LANDMARK_RE = re.compile(
-    NLB + r"(?:ориентир[а-я]*|напротив|рядом\s+с(?:о)?|возле|около|на\s+углу|угол|уг\.?|"
+    NLB + r"(?:ориентир[а-я]*|напротив|рядом\s+с(?:о)?|рядом|возле|около|на\s+углу|угол|уг\.?|"
     r"магазин[а-я]*|маг\.|супермаркет[а-я]*|минимаркет[а-я]*|тц|трц|бц|тд|"
     r"рын(?:ок|ка|ком)|цон|magnum|мечет[ьи]|базар[аеуы]?|аптек[аиу]|школ[аыу]|гимнази[яи]|детский\s+сад|д/с|"
     r"больниц[аыу]|поликлиник[аиу]|кафе|ресторан[а-я]*|банк[а]?|салон[а-я]*|азс|"
-    r"остановк[аиу]|павильон[а-я]*|общежити[еяи]|qazpost|казпочт[аы]|kaspi|halyk|почт[аыу])" + NLA,
+    r"жатақхана\w*|нефтебаз[аы]|вокзал[а-я]*|стадион[а-я]*|кинотеатр[а-я]*|общаг[аеу]|остановк[аиу]|павильон[а-я]*|общежити[еяи]|qazpost|казпочт[аы]|kaspi|halyk|почт[аыу])" + NLA,
     re.I,
 )
 
@@ -576,6 +675,10 @@ def extract_landmark(text: str) -> tuple[Optional[str], str]:
         nxt = re.match(rf"\s+({LET}[\w-]*)\s*,?\s*\d", text[cand.end():])
         if not prep and nxt and gz.is_street_anywhere(f"{cand.group(0)} {nxt.group(1)}"):
             continue          # "базар жырау 89" — улица (есть в справочнике), а не ориентир
+        if cand.group(0).lower() == "рядом":
+            near = re.match(rf"\s+({LET}[\w-]*)\s*,?\s*\d", text[cand.end():])
+            if near and gz.is_street_anywhere(near.group(1)):
+                continue      # «рядом Тарана 100»: «рядом» тут про улицу, ориентира нет
         m = cand
         break
     if not m:
@@ -587,6 +690,9 @@ def extract_landmark(text: str) -> tuple[Optional[str], str]:
         if t.lastgroup == "num" or _STREET_TYPE_RE.match(t.group(0)) or UNIT_KW_RE.fullmatch(t.group(0)):
             stop_by_number = t.lastgroup == "num"
             break
+        if words and t.group(0).lower() in ("на", "по") and (nt := TOKEN_RE.match(text, t.end() + 1)) \
+                and gz.is_street_anywhere(nt.group(0)):
+            break                       # «возле Магнум на Чехова»: дальше улица, а не ориентир
         words.append(t)
         if len(words) == 4:
             break
@@ -600,9 +706,17 @@ def extract_landmark(text: str) -> tuple[Optional[str], str]:
     end = words[-1].end() if words else m.end()
     if num:                            # «аптека №3», «общежитие №2»: номер — часть ориентира
         end += num.end()
+        abbr = re.match(r"\s+[A-ZА-ЯЁӘҒҚҢӨҰҮІ]{2,6}(?![^\W\d_])", text[end:seg_end])
+        if abbr:                       # «общежитие №3 ПГУ»
+            end += abbr.end()
     start = words[0].start() if words and re.match(r"(?i)ориентир", m.group(0)) else m.start()
+    post = re.search(r"(?:жанында\w*|маңында|алдында|қасында|қарсысында)$", text[start:end])
+    if post:                           # «Фармановский рынок жанында»: название стоит перед маркером
+        before = re.search(rf"(?:^|,)\s*({LET}[\w-]*)\s+$", text[:start])
+        if before and not UNIT_KW_RE.fullmatch(before.group(1)) and not _STREET_TYPE_RE.match(before.group(1)):
+            start = before.start(1)
     landmark = re.sub(r"\s+", " ", text[start:end]).strip().replace("# ", "№").replace("#", "№")
-    return landmark, _cut(text, [(m.start(), end)])
+    return landmark, _cut(text, [(min(m.start(), start), end)])
 
 
 # ---------------------------------------------------------------------------
@@ -1035,6 +1149,19 @@ def _comma_name_extension(text: str, name_start: int, name_end: int, later_numbe
 _LA_NUM_SEG_RE = re.compile(rf"^\s*(?P<n>{LET}[\w-]*?(?:\s+{LET}[\w-]*)?)[\s-]*(?P<num>\d{{1,2}}{LET}?)\s*$")
 
 
+def _area_then_street(text: str) -> tuple[Optional[str], str]:
+    """«Степной 2, Назарбаева 115»: первый сегмент — мкр с номером, второй — улица с домом (типов нет)."""
+    m = re.match(rf"^({LET}+(?:-{LET}+)?)\s+(\d{{1,2}})\s*,\s*(.+)$", text)
+    if not m:
+        return None, text
+    area, rest = f"{m.group(1)} {m.group(2)}", m.group(3)
+    street = re.match(rf"^({LET}[\w-]*(?:\s+{LET}[\w-]*)?)\s+\d", rest)
+    if street and (gz.is_known_living_area(area) or gz.is_living_area_base(m.group(1))) \
+            and not gz.is_known_city(m.group(1)) and gz.is_street_anywhere(street.group(1)):
+        return area, rest
+    return None, text
+
+
 def _numbered_living_area(text: str, house_known: bool = False) -> tuple[Optional[str], str]:
     """'Алматы, Шанырак 2, ул. Жанкожа батыра 202': сегмент «мкр без типа + номер», а улица с типом
     идёт отдельно -> это жилой массив (иначе номер мкр уходит в дом, а дом — в квартиру)."""
@@ -1366,6 +1493,8 @@ def _parse_ex(raw_address) -> tuple[dict, set, str, str, dict]:
         r["district"], text = _bare_district(text, r["city"])
 
     pre_la, text = _numbered_living_area(text, r["house"] is not None)
+    if not pre_la and r["house"] is None:
+        pre_la, text = _area_then_street(text)
     if pre_la:
         flags.add("living_area_from_gazetteer")
     main, living, text, f = _extract_streets(text, r["house"] is not None)
@@ -1432,10 +1561,22 @@ def _parse_ex(raw_address) -> tuple[dict, set, str, str, dict]:
             r["city"], r["street_name"] = gz.canonical_city(r["street_name"]), seg0
             flags.add("city_street_swapped")
             text = _cleanup(text.replace(leftover_segs.pop(0), " ", 1))
+        elif not gz.is_known_city(seg0) and (len(seg0.split()) > 2 or (len(seg0.split()) == 1 and gz.is_street_anywhere(seg0))):
+            # «Розыбакиева», «Рядом метро нет»: это улица или фраза, а не город — города не выдумываем
+            if r["street_name"] is None and gz.is_street_anywhere(seg0):
+                r["street_name"] = leftover_segs.pop(0)
+                flags.add("street_untyped")
         else:
             r["city"] = gz.canonical_city(seg0)
             flags.add("city_by_position")
             text = _cleanup(text.replace(leftover_segs.pop(0), " ", 1))
+    if r["city"] is None:
+        for seg in leftover_segs:           # «Казахстан 85 кв 310 Усть-Каменогорск»: город стоит после улицы
+            if gz.is_known_city(seg) and not gz.is_street_anywhere(seg):
+                r["city"] = gz.canonical_city(seg)
+                text = _cleanup(text.replace(seg, " ", 1))
+                flags.add("city_after_street")
+                break
     leftover = text
 
     # "Курмангазы дом 8", "Жансугуров, 10г": кроме «города» ничего нет, а дом есть. У адреса должна быть
@@ -1475,8 +1616,28 @@ def _parse_ex(raw_address) -> tuple[dict, set, str, str, dict]:
             r["province"] = gz.province_for_city(r["city"])
             if r["province"]:
                 flags.add("province_from_ambiguous_city")
+    if r["street_name"]:
+        stripped = re.sub(r"(?i)^(?:на|по|рядом|возле|около|у)\s+(?=\S)", "", r["street_name"])
+        if stripped != r["street_name"] and re.search(LET, stripped):
+            r["street_name"] = stripped            # «на Чехова», «рядом Тарана»
+    if r["street_name"] and r["street_type"] is None and len(r["street_name"].split()) >= 2:
+        # «Гоголя свой забор зеленый»: за названием улицы идёт пояснение маленькими буквами — отрезаем его
+        words = r["street_name"].split()
+        whole_ok = gz.is_street_anywhere(r["street_name"]) or words[-1].lower() in _NAME_TAILS
+        for k in range(len(words) - 1, 0, -1):
+            if whole_ok:
+                break
+            head = " ".join(words[:k])
+            if words[k][:1].islower() and not words[k - 1][-1:].isdigit() and (
+                    gz.is_street_anywhere(head) or gz.is_known_living_area(head) or gz.is_living_area_base(head)):
+                r["street_name"] = head
+                flags.add("street_tail_cut")
+                break
     if r["street_name"] and len(r["street_name"].split()) > 4:
         flags.add("street_long")
+        if r["house"] is None and not re.search(r"\d", r["street_name"]):
+            r["street_name"], r["street_type"] = None, None      # целая фраза без номера — это не адрес
+            flags.add("street_dropped_phrase")
 
     # справочник улиц (ключ "streets"): street_name НЕ исправляем — только тип и уверенность
     is_area = r["street_type"] in _AREA_TYPES

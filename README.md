@@ -21,7 +21,7 @@ docker compose up -d --build
 - API и Swagger: http://localhost:8000/docs (пример запроса уже подставлен)
 - Интерфейс: http://localhost:8501 (логин `admin`, пароль `jana-admin`)
 
-Если на машине нет интернета даже для сборки, берите готовый образ:
+Если на машине нет интернета даже для сборки, берите готовый образ ([скачать с Google Диска](https://drive.google.com/drive/folders/1W8Gg4M0FcKZP_58RXbtlEq0vFLHFOdiu), файл `jana-address-image-final.tar`, 191 МБ):
 
 ```bash
 docker load -i jana-address-image-final.tar

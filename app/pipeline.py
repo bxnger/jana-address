@@ -108,14 +108,20 @@ def courier_info(extras: dict, noise: list[str]) -> dict:
 
 
 def _decaps(out: dict, gz: Gazetteer) -> None:
-    """«УЛ. САТПАЕВА» -> «Сатпаева»: в 2ГИС названия не капсом. Сначала написание из справочника,
-    иначе заглавная только первая буква (как «Кабанбай батыра»)."""
+    """«УЛ. САТПАЕВА» и «туран» -> «Сатпаева», «Туран»: в 2ГИС названия не капсом и не строчными.
+    Сначала написание из справочника, иначе заглавная первая буква (как «Кабанбай батыра»)."""
+    city = out.get("city")
+    if city and (city.isupper() or city.islower()):
+        known = core_gz.canonical_city(city)
+        out["city"] = known if known != city else "-".join(p[:1].upper() + p[1:].lower() for p in city.split("-"))
+        if " " in out["city"]:
+            out["city"] = " ".join(w[:1].upper() + w[1:] for w in out["city"].split())
     for f in ("street_name", "living_area"):
         v = out.get(f)
-        if not v or not v.isupper() or len(re.sub(r"[\W\d_]", "", v)) < 3:
+        if not v or not (v.isupper() or v.islower()) or len(re.sub(r"[\W\d_]", "", v)) < 3:
             continue
         hits = gz.streets.get(out.get("city") or "", {}).get(norm(v)) if f == "street_name" else None
-        out[f] = hits[0]["name"] if hits else v[:1] + v[1:].lower()
+        out[f] = hits[0]["name"] if hits and v.isupper() else (v[:1].upper() + v[1:].lower() if v.isupper() else v[:1].upper() + v[1:])
 
 
 def process_record(rec: dict, gz: Gazetteer | None = None, debug: bool = False) -> dict:
@@ -140,6 +146,9 @@ def process_record(rec: dict, gz: Gazetteer | None = None, debug: bool = False) 
     except Exception:
         log.exception("osm enrich failed: %r", raw)
         src = {}
+    if src.get("district") == "gazetteer" and out.get("district") and core_gz.is_major_city(out["district"]) \
+            and (not out.get("city") or core_gz.canonical_city(out["district"]) == out["city"]):
+        out["district"] = None        # в справочнике у ЖК район записан названием города — это не район
     if debug:
         out["_source"] = src
         out["_district_via"] = via
